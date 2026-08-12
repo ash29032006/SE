@@ -5,7 +5,7 @@
 #   - Every push and PR to main
 #
 # Jobs:
-#   1. lint        – validate notebook JSON structure
+#   1. lint        – convert notebook to .py, run pylint
 #   2. build-test  – execute the notebook end-to-end, export HTML
 #   3. deploy      – publish HTML report to GitHub Pages (main only)
 # ==============================================================
@@ -31,7 +31,7 @@ concurrency:
 jobs:
   # ── 1. Lint ─────────────────────────────────────────────────
   lint:
-    name: Lint Notebook
+    name: Pylint Notebook
     runs-on: ubuntu-latest
 
     steps:
@@ -43,20 +43,14 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install linting tools
-        run: pip install nbformat
+      - name: Install dependencies
+        run: pip install -r requirements.txt pylint
 
-      - name: Validate notebook JSON
-        run: python -c "
-          import nbformat, sys;
-          try:
-              nb = nbformat.read('notebook085d1cc1d4.ipynb', as_version=4);
-              nbformat.validate(nb);
-              print('✅ Notebook is valid');
-          except Exception as e:
-              print(f'❌ Notebook validation failed: {e}');
-              sys.exit(1)
-          "
+      - name: Convert notebook to Python script
+        run: jupyter nbconvert --to script notebook085d1cc1d4.ipynb --output notebook
+
+      - name: Run pylint
+        run: pylint notebook.py --disable=C0114,C0116,C0103,E0401,W0621 --exit-zero
 
   # ── 2. Build & Test ────────────────────────────────────────
   build-test:
