@@ -86,6 +86,7 @@ jobs:
             --to html \
             --no-input \
             executed_notebook.ipynb \
+            --output index.html \
             --output-dir=public
 
       - name: Upload HTML report artifact
