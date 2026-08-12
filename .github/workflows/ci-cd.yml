@@ -1,0 +1,124 @@
+# ==============================================================
+# CI/CD Pipeline for ML Notebook
+# ==============================================================
+# Triggers:
+#   - Every push and PR to main
+#
+# Jobs:
+#   1. lint        – validate notebook JSON structure
+#   2. build-test  – execute the notebook end-to-end, export HTML
+#   3. deploy      – publish HTML report to GitHub Pages (main only)
+# ==============================================================
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one Pages deploy at a time
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  # ── 1. Lint ─────────────────────────────────────────────────
+  lint:
+    name: Lint Notebook
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install linting tools
+        run: pip install nbformat
+
+      - name: Validate notebook JSON
+        run: python -c "
+          import nbformat, sys;
+          try:
+              nb = nbformat.read('notebook085d1cc1d4.ipynb', as_version=4);
+              nbformat.validate(nb);
+              print('✅ Notebook is valid');
+          except Exception as e:
+              print(f'❌ Notebook validation failed: {e}');
+              sys.exit(1)
+          "
+
+  # ── 2. Build & Test ────────────────────────────────────────
+  build-test:
+    name: Build & Test Notebook
+    needs: lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Execute notebook
+        run: |
+          jupyter nbconvert \
+            --to notebook \
+            --execute \
+            --ExecutePreprocessor.timeout=120 \
+            --output executed_notebook.ipynb \
+            notebook085d1cc1d4.ipynb
+
+      - name: Convert to HTML report
+        run: |
+          jupyter nbconvert \
+            --to html \
+            --no-input \
+            executed_notebook.ipynb \
+            --output-dir=public
+
+      - name: Upload HTML report artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: notebook-report
+          path: public/
+          retention-days: 30
+
+      - name: Upload Pages artifact
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: public/
+
+  # ── 3. Deploy to GitHub Pages ──────────────────────────────
+  deploy:
+    name: Deploy to GitHub Pages
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: build-test
+    runs-on: ubuntu-latest
+
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
