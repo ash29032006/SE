@@ -1,13 +1,15 @@
 # ==============================================================
-# CI/CD Pipeline for ML Notebook
+# CI/CD Pipeline for ML Notebook + ISA2 Module
 # ==============================================================
 # Triggers:
 #   - Every push and PR to main
 #
 # Jobs:
 #   1. lint        – convert notebook to .py, run pylint
-#   2. build-test  – execute the notebook end-to-end, export HTML
-#   3. deploy      – publish HTML report to GitHub Pages (main only)
+#   2. isa2-lint   – run pylint on isa2/ Python module
+#   3. isa2-test   – run unittest (PyUnit) on isa2/ tests
+#   4. build-test  – execute the notebook end-to-end, export HTML
+#   5. deploy      – publish HTML report to GitHub Pages (main only)
 # ==============================================================
 
 name: CI/CD Pipeline
@@ -29,7 +31,7 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # ── 1. Lint ─────────────────────────────────────────────────
+  # ── 1. Lint (Notebook) ─────────────────────────────────────
   lint:
     name: Pylint Notebook
     runs-on: ubuntu-latest
@@ -52,7 +54,44 @@ jobs:
       - name: Run pylint
         run: pylint notebook.py --disable=C0114,C0116,C0103,E0401,W0621 --exit-zero
 
-  # ── 2. Build & Test ────────────────────────────────────────
+  # ── 2. Lint (ISA2) ─────────────────────────────────────────
+  isa2-lint:
+    name: Pylint ISA2
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install pylint
+        run: pip install pylint
+
+      - name: Run pylint on isa2
+        run: pylint isa2/x.py --rcfile=isa2/.pylintrc
+
+  # ── 3. Unit Tests (ISA2) ───────────────────────────────────
+  isa2-test:
+    name: PyUnit ISA2
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run unit tests
+        run: python -m unittest discover -s isa2 -p "test_*.py" -v
+
+  # ── 4. Build & Test (Notebook) ─────────────────────────────
   build-test:
     name: Build & Test Notebook
     needs: lint
@@ -102,11 +141,11 @@ jobs:
         with:
           path: public/
 
-  # ── 3. Deploy to GitHub Pages ──────────────────────────────
+  # ── 5. Deploy to GitHub Pages ──────────────────────────────
   deploy:
     name: Deploy to GitHub Pages
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: build-test
+    needs: [build-test, isa2-test]
     runs-on: ubuntu-latest
 
     environment:
