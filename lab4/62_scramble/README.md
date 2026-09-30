@@ -9,13 +9,11 @@ A working Word Scramble game with:
 
 - A built-in dictionary pool of words chosen at random each round
 - A scrambling algorithm that randomizes letter order while ensuring the scrambled version differs from the original word
-- A custom `TextBox` input component handling alphabetic keystrokes, automatic uppercase conversion, and backspace[cite: 34, 35]
+- A custom `TextBox` input component handling alphabetic keystrokes, automatic uppercase conversion, and backspace
 - Interactive guess submission via the `Return` / `Enter` key or clicking the `SUBMIT` button
 - Real-time score tracking, spaced letter displays, and color-coded status messaging
 
-It has **one deliberate bug** and **three optional features** left as tasks to implement. You are expected to **analyze**, **interact with an AI assistant**, and **complete/fix** the game to make it fully functional and more interesting.
-
-### **Use an LLM (e.g. ChatGPT or Claude) as your debugging and pair-programming partner for this lab.**
+This repository contains the **completed** fixes and implemented features for the bug and three feature tasks described below.
 ---
 
 ## Getting Started
@@ -69,9 +67,11 @@ Instead of reading scrambled letters as a static text string, render each scramb
 
 ## Folder Structure
 
-```
-word_scramble/
+```text
+62_scramble/
+├── .gitignore
 ├── game/
+│   ├── __init__.py
 │   ├── game_engine.py
 │   └── text_box.py
 ├── main.py
@@ -80,8 +80,6 @@ word_scramble/
 
 ## Submission Checklist
 
-Submission is only the following three things:
-
-- [x] A 10-second video of gameplay **before** your changes, showing the bug/broken behavior
-- [x] A 10-second video of gameplay **after** your changes, showing the bug fixed and the new features working
-- [x] The Chat/LLM used page link, with the complete chat history
+- [x] A 10-second video of gameplay **before** changes (`../videos/before_change.mov`)
+- [x] A 10-second video of gameplay **after** changes (`../videos/After_change.mov`)
+- [x] Complete Chat/LLM history (`../docs/chat_history.docx`, `../docs/chat_history.md`)

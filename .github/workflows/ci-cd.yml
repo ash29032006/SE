@@ -49,7 +49,7 @@ jobs:
         run: pip install -r requirements.txt pylint
 
       - name: Convert notebook to Python script
-        run: jupyter nbconvert --to script notebook085d1cc1d4.ipynb --output notebook
+        run: jupyter nbconvert --to script ml_cicd/notebook085d1cc1d4.ipynb --output notebook --output-dir=.
 
       - name: Run pylint
         run: pylint notebook.py --disable=C0114,C0116,C0103,E0401,W0621 --exit-zero
@@ -117,7 +117,8 @@ jobs:
             --execute \
             --ExecutePreprocessor.timeout=120 \
             --output executed_notebook.ipynb \
-            notebook085d1cc1d4.ipynb
+            --output-dir=. \
+            ml_cicd/notebook085d1cc1d4.ipynb
 
       - name: Convert to HTML report
         run: |
